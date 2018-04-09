@@ -15,10 +15,16 @@ export default class ImagePreview extends React.Component{
 
     updateCanvas(){
         if (this.props.content){
+            let data = this.props.content.toImageData();
             const canvas = this.refs.canvas;
-            const contex = canvas.getContext('2d');
-            contex.clearRect(0, 0, canvas.width, canvas.height);
-            contex.putImageData(this.props.content, 0, 0);
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle ="rgba(255, 255, 255, 255)";
+            context.beginPath();
+            context.fillRect(0, 0, data.width, data.height);
+            context.fill();
+            context.globalCompositeOperation = 'source-over';
+            context.putImageData(this.props.content.toImageData(), 0, 0);
         }
     }
     render (){

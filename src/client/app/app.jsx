@@ -9,18 +9,34 @@ import ClusterControl from "./Components/ClusterControl/ClusterControl";
 
 import ImageLoadService from "./services/ImageLoader/ImageLoaderService";
 import ImageScaleService from "./services/ImageScaler/ImageScaleService";
+import ClusterifyService from "./services/ClusterifyService/ClusterifyService";
+import PaletteService from "./services/PaletteService/PaletteService"
+import ImageModelFactory from "./services/ImageModelFactory/ImageModelFactory"
+
+const R = require('ramda');
 
 export default class App extends React.Component{
     constructor(){
         super();
         this.centroids = [];
         this.clusters = [];
+
         this.imageLoadService = new ImageLoadService();
-        this.imageScaleService = new ImageScaleService();
+        this.imageScaleService = new ImageScaleService(new ImageModelFactory());
+        this.clusterService = new ClusterifyService();
+        this.paletteService = new PaletteService();
 
         this.onLoadImage = this.onLoadImage.bind(this);
         this.onScaleImage = this.onScaleImage.bind(this);
-        this.state = {};
+        this.onClusterify = this.onClusterify.bind(this);
+        this.onPaletteChange = this.onPaletteChange.bind(this);
+        this.state = { palette : this.paletteService.defaultPalette()};
+
+
+    }
+
+    componentDidMount(){
+        this.setState({'palette' : this.paletteService.defaultPalette()});
     }
 
     onLoadImage(uri){
@@ -38,24 +54,36 @@ export default class App extends React.Component{
         }
     }
 
+    onClusterify(){
+        if (this.state.scaledImage && this.state.palette){
+            this.clusterService.k_nearest_neighbours(this.state.scaledImage.toPixels(), this.state.palette).then(clusters => {
+                let image = this.state.scaledImage.simplifyPalette(clusters);
+                this.setState({test: image});
+                this.setState({clusters : clusters});
+            });
+        }
+    }
+
+    onPaletteChange(paletteColor){
+        let palette = this.state.palette;
+        palette[paletteColor.index] = paletteColor;
+        this.setState({palette : palette});
+    }
+
     render(){
         return (
             <div>
                 <p>Hamafy</p>
-
-                <div>
-                    <ImageLoader onLoadImage={this.onLoadImage}></ImageLoader>
-                    <ImagePreview content={this.state.scaledImage}></ImagePreview>
-                </div>
-                <div>
-                    <ImageScaler onScaleImage={this.onScaleImage}></ImageScaler>
+                <div style={{display : 'inline-flex', flexDirection :'row'}}>
                     <div>
-                        <div>
-                            <CentroidControl centroids={this.centroids}/>
-                        </div>
-                        <div>
-                            <ClusterControl clusters={this.clusters}/>
-                        </div>
+                        <ImageLoader onLoadImage={this.onLoadImage}></ImageLoader>
+                        <ImageScaler onScaleImage={this.onScaleImage}></ImageScaler>
+                        <ImagePreview content={this.state.scaledImage}></ImagePreview>
+                        <ImagePreview content={this.state.test}></ImagePreview>
+                    </div>
+                    <div style={{display: 'inline-flex', flexDirection : 'row'}}>
+                        <CentroidControl centroids={this.state.palette} onClusterify={this.onClusterify} onChangeColor={this.onPaletteChange}/>
+                        <ClusterControl clusters={this.state.clusters}/>
                     </div>
                 </div>
             </div>

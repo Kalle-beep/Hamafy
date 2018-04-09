@@ -1,0 +1,7 @@
+.colorChooser{
+    height : 1em;
+    width: 20%;
+    display: inline-block;
+    margin-right: 0.3em;
+    border: black solid 2px;
+}
