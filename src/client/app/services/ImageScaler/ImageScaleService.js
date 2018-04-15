@@ -1,31 +1,37 @@
+/**
+ * Service for scaling image to smaller dimensions
+ */
 export default class ImageScaleService{
     constructor(imageModelFactory){
         this.imageModelFactory = imageModelFactory;
     }
 
+    /**
+     * Scales imagedata object to gicen dimensions pixel image. by rasterification of a larger image and calculating
+     * an average color for each raster.
+     * @param imageData
+     * @param width
+     * @param height
+     * @returns {Promise<any>} - scaled image as pixels
+     */
     scale(imageData, width, height){
         let promise = new Promise((resolve, reject) => {
-            let scaledImage = new ImageData(width, height);
+            let length = width*height;
             let pixels = [];
 
+            // calculates factors for scaled image
             let xf = imageData.width / width,
                 yf = imageData.height / height;
 
-            for (let i=0;i<scaledImage.data.length;i+=4){
-                let iPixel = i / 4;
-                let x = Math.floor((iPixel - Math.floor(iPixel/width)*width)*xf);
-                let y = Math.floor(Math.floor(iPixel/width)*yf);
+            for (let i=0;i<length;++i){
+                // resolve pixel's upper left x and y coordinate in original image.
+                let x = Math.floor((i - Math.floor(i/width)*width)*xf);
+                let y = Math.floor(Math.floor(i/width)*yf);
 
                 let pixel = this._calculateAverage(imageData, x, y, xf, yf);
 
                 pixels.push(pixel);
-
-                // scaledImage.data[i] = pixel.r;
-                // scaledImage.data[i+1] = pixel.g;
-                // scaledImage.data[i+2] = pixel.b;
-                // scaledImage.data[i+3] = pixel.a;
             }
-
 
             resolve(this.imageModelFactory.createFromPixels(pixels, width, height));
         });
@@ -33,6 +39,16 @@ export default class ImageScaleService{
         return promise;
     }
 
+    /**
+     * CAlculates average value for pixels in the area.
+     * @param imageData
+     * @param x
+     * @param y
+     * @param w
+     * @param h
+     * @returns {{r: number, g: number, b: number, a: number}}
+     * @private
+     */
     _calculateAverage(imageData, x, y, w, h){
         let pixel = {r: 0, g:0, b:0, a:0};
         let count = Math.ceil(w)*Math.ceil(h);

@@ -1,9 +1,15 @@
 import React from 'react';
 import ColorChooser from '../ColorControl/ColorChooser';
-var R = require('ramda');
 
+/**
+ * Class for selecting starting point for making clusters image colors.
+ */
 export default class CentroidControl extends React.Component{
 
+    /**
+     * Constructor set control properties to control and binds event handlers to object.
+     * @param props
+     */
     constructor(props){
         super(props);
         this.onClusterify = this.onClusterify.bind(this);
@@ -11,28 +17,26 @@ export default class CentroidControl extends React.Component{
         this.centroids = this.props.centroids;
     }
 
+    /**
+     * Event handler which propagates clusterification event to app component.
+     */
     onClusterify(){
         this.props.onClusterify();
     }
 
-
+    /**
+     * Event handler which propagates clusterification event to app component.
+     */
     onChangeColor(pixel){
         this.props.onChangeColor(pixel);
     }
 
+    /**
+     * Renders centroids to controls
+     * @returns {*} -- centorids as controls
+     */
     renderCentroids(){
         return this.centroids.map(centroid => <li key={centroid.index}><ColorChooser color={centroid} onChange={this.onChangeColor}/></li>);
-    }
-
-    _toHex(pixel){
-        return R.compose(
-            R.reduce((acc, val) => acc + val, '#'),
-            R.map(k => this._decToHex(pixel[k]).toUpperCase()),
-            R.sortWith([R.descend]),
-            R.keys)(pixel);
-    }
-    _decToHex(d){
-        return Number(d).toString(16).padStart(2, '0');
     }
 
     render (){

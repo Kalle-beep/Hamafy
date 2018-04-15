@@ -1,51 +1,21 @@
 const R = require('ramda');
 
+/**
+ * factory for creating images with custom palettes from pixels.
+ */
 export default class ImageModelFactory{
-    createFromImageData(imageData){
-        return new ImageModel(this._clusterifyImageData(imageData));
-    }
-
     createFromPixels(pixels, width, height){
         return new ImageModel(this._clusterifyPixels(pixels, width, height));
     }
 
-    _clusterifyImageData(imageData){
-
-        let palette = [];
-        let clusterifiedImage = {
-            data:[],
-            palette : [],
-            width: imageData.width,
-            height: imageData.height
-        };
-        let colorIndex = 0;
-        for (let i =0;i<imageData.data.length;i+=4){
-            let pixel = {
-                r : data[i],
-                g : data[i+1],
-                b : data[i+2],
-                a : data[i+3]
-            };
-            let id = this._pixelToCluster(pixel);
-
-            if (!palette[id]){
-                ++colorIndex;
-                palette[id] = {
-                    pixel: pixel,
-                    index : colorIndex
-                };
-            }
-
-            clusterifiedImage.data.push(palette[id].index);
-        }
-
-        clusterifiedImage.palette = R.compose(
-            R.map(p => p.pixel),
-            R.sortBy(p => p.index)
-        )(palette);
-
-        return clusterifiedImage;
-    }
+    /**
+     * creates a palette from image presented by pixel objects.
+     * @param pixels
+     * @param width
+     * @param height
+     * @returns {{data: Array, palette: Array, width: *, height: *}}
+     * @private
+     */
     _clusterifyPixels(pixels, width, height){
         let palette = [];
         let clusterifiedImage = {
@@ -58,8 +28,11 @@ export default class ImageModelFactory{
 
         for (let i=0;i<pixels.length;++i){
              let pixel = pixels[i];
+
+            // converts pixel to string for easy identifying
              let id = this._pixelToCluster(pixel);
 
+            // if color not exists in palette color is added and index is increased.
              if (!palette[id]){
                 palette[id] = {
                     pixel: pixel,
@@ -68,9 +41,11 @@ export default class ImageModelFactory{
                  ++colorIndex;
             }
 
+            // pixel is added to image array as an palette index.
             clusterifiedImage.data.push(palette[id].index);
         }
 
+        // creates an array from palette.
         clusterifiedImage.palette = R.compose(
             R.map(p => p.pixel),
             R.sortBy(p => p.index),
@@ -81,13 +56,20 @@ export default class ImageModelFactory{
         return clusterifiedImage;
     }
 
+    /**
+     * Concanates pixel values together to identify them.
+     * @param pixel
+     * @returns {string}
+     * @private
+     */
     _pixelToCluster(pixel){
         return pixel.r.toString()+pixel.g.toString()+pixel.b.toString();
     }
-
-
 }
 
+/**
+ * Model for image with custom palette which can be converted to imagedata and pixel form.
+ */
 class ImageModel{
     constructor(clusterifiedImage){
         this.data = clusterifiedImage.data;
@@ -96,6 +78,10 @@ class ImageModel{
         this.height = clusterifiedImage.height;
     }
 
+    /**
+     * Creates a correct size imagedata object and assigns pixels to it byte by byte.
+     * @returns {ImageData}
+     */
     toImageData(){
         let data = new ImageData(this.width, this.height);
 
@@ -111,19 +97,36 @@ class ImageModel{
         return data;
     }
 
+    /**
+     * coverts palette index value array to pixel array.
+     * @returns {*}
+     */
     toPixels(){
         return R.map(p => this._toPixel(p), this.data);
     }
 
+    /**
+     * resolves palette color for palette index
+     * @param cluster
+     * @returns {*}
+     * @private
+     */
     _toPixel(cluster){
         return this.palette[cluster];
     }
 
+    /**
+     * Assign colors into to new palette.
+     * @param clusters
+     * @returns {ImageModel}
+     */
     simplifyPalette(clusters)
     {
+        // creates a map from pixels belonging to clusters to return cluster color for each color belonging to it
         let colorMap = R.reduce((acc, c) => R.assoc(c.color, c.centroid, acc), {},R.unnest(R.map(c => R.map(p => ({'centroid': c.centroid, 'color': this._toPixelHash(p)}), c.points), clusters)));
         let palette = R.map((c, i) => c.centroid, clusters);
 
+        // maps each pixel to its cluster color index.
         let pixels = R.map(p => {
             let color = colorMap[this._toPixelHash(p)];
             return R.indexOf(color, palette)}, this.toPixels());
@@ -136,6 +139,13 @@ class ImageModel{
         });
     }
 
+    /**
+     * calculates a hash from pixel color values. Because JavaScript bitshift works only with signed 32-bit integers
+     * it has to been done with multiplication.
+     * @param pixel
+     * @returns {*|number}
+     * @private
+     */
     _toPixelHash(pixel){
         let hash = 0;
         hash = pixel.r;

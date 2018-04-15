@@ -1,6 +1,10 @@
 var R = require('ramda');
 
+/**
+ * Class for defining palettes
+ */
 export default class PaletteService{
+
     defaultPalette(){
         return this._indexPalette([
             {r: 255, g: 0, b: 0, a : 255},   // Red
@@ -23,6 +27,12 @@ export default class PaletteService{
         ]);
     }
 
+    /**
+     * Adds index in each color in palette.
+     * @param palette
+     * @returns {*}
+     * @private
+     */
     _indexPalette(palette){
         return R.addIndex(R.map)((val, i)=> {return R.merge({index : i}, val)}, palette);
     }
