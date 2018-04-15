@@ -6,6 +6,7 @@ import ImagePreview from "./Components/ImagePreview/ImagePreview";
 import ImageScaler from "./Components/ImageScaler/ImageScaler";
 import CentroidControl from "./Components/CentroidControl/CentroidControl";
 import ClusterControl from "./Components/ClusterControl/ClusterControl";
+import MessageControl from './Components/MessageControl/Message';
 
 import ImageLoadService from "./services/ImageLoader/ImageLoaderService";
 import ImageScaleService from "./services/ImageScaler/ImageScaleService";
@@ -30,6 +31,9 @@ export default class App extends React.Component{
         this.onScaleImage = this.onScaleImage.bind(this);
         this.onClusterify = this.onClusterify.bind(this);
         this.onPaletteChange = this.onPaletteChange.bind(this);
+        this.onSaveImage = this.onSaveImage.bind(this);
+        this.onMessageOk = this.onMessageOk.bind(this);
+
         this.state = { palette : this.paletteService.defaultPalette()};
 
 
@@ -41,15 +45,20 @@ export default class App extends React.Component{
 
     onLoadImage(uri){
         this.imageLoadService.loadImage(uri).then(image => {
-            this.setState({imageData : image});
-            console.log("Image Loaded");
+            this.setState({imageData : image, message: "Image loaded"});
+
         });
     }
 
     onScaleImage(width, height){
         if (this.state.imageData){
             this.imageScaleService.scale(this.state.imageData, width, height).then(scaledImage =>{
-                this.setState({scaledImage : scaledImage});
+                this.setState({
+                    scaledImage : scaledImage,
+                    clusters : null,
+                    test : null,
+                    message: "Image Scaled"
+                });
             });
         }
     }
@@ -59,7 +68,9 @@ export default class App extends React.Component{
             this.clusterService.k_nearest_neighbours(this.state.scaledImage.toPixels(), this.state.palette).then(clusters => {
                 let image = this.state.scaledImage.simplifyPalette(clusters);
                 this.setState({test: image});
-                this.setState({clusters : clusters});
+                this.setState({
+                    clusters : clusters,
+                    message: "Image clusterified"});
             });
         }
     }
@@ -70,22 +81,41 @@ export default class App extends React.Component{
         this.setState({palette : palette});
     }
 
+    onSaveImage(userClusters){
+
+        let userClusterMap = R.compose(
+                                        R.map(c => R.dissoc('index', c)),
+                                        R.sortBy(R.prop('index')),
+                                        R.uniqBy(R.prop('index'))
+                                      )(userClusters);
+
+        let clusters = R.map(c => R.merge(c, {centroid : userClusterMap[c.index]||c.centroid}), this.state.clusters);
+
+        let image = this.state.scaledImage.simplifyPalette(clusters);
+        this.setState({test: image});
+    }
+
+    onMessageOk(){
+        this.setState({message: null});
+    }
+
     render(){
         return (
             <div>
                 <p>Hamafy</p>
-                <div style={{display : 'inline-flex', flexDirection :'row'}}>
-                    <div>
+                <div style={{display : 'inline-flex', flexDirection :'row', width : '100%'}}>
+                    <div style={{width:'30%'}}>
                         <ImageLoader onLoadImage={this.onLoadImage}></ImageLoader>
                         <ImageScaler onScaleImage={this.onScaleImage}></ImageScaler>
                         <ImagePreview content={this.state.scaledImage}></ImagePreview>
                         <ImagePreview content={this.state.test}></ImagePreview>
                     </div>
-                    <div style={{display: 'inline-flex', flexDirection : 'row'}}>
+                    <div style={{display: 'inline-flex', flexDirection : 'row', width: '70%'}}>
                         <CentroidControl centroids={this.state.palette} onClusterify={this.onClusterify} onChangeColor={this.onPaletteChange}/>
-                        <ClusterControl clusters={this.state.clusters}/>
+                        <ClusterControl clusters={this.state.clusters} onSaveImage={this.onSaveImage}/>
                     </div>
                 </div>
+                <MessageControl message={this.state.message} onOk={this.onMessageOk}/>
             </div>
         );
     }

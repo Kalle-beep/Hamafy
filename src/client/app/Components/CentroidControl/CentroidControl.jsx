@@ -37,8 +37,8 @@ export default class CentroidControl extends React.Component{
 
     render (){
         return (
-            <div>
-                <ul>{this.renderCentroids()}</ul>
+            <div style={{width: '50%'}}>
+                <ul style={{listStyle: "none"}}>{this.renderCentroids()}</ul>
                 <button onClick={this.onClusterify}>Clusterify</button>
             </div>
         );

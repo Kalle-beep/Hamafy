@@ -2,6 +2,8 @@ import React from 'react';
 import ColorChooser from '../ColorControl/ColorChooser';
 import './ClusterColor.css';
 
+const R = require('ramda');
+
 export default class ClusterColor extends React.Component{
     constructor(props){
         super(props);
@@ -22,7 +24,7 @@ export default class ClusterColor extends React.Component{
     }
     render(){
         return (<div>
-            <div className="colorChooser" style={{backgroundColor: this.color()}}></div><ColorChooser style={{display : 'inline-block', width: '70%'}}color={this.state.userColor} onChange={this.onChange}/>
+            <div className="colorChooser" style={{backgroundColor: this.color(), width: '5%'}}></div><ColorChooser style={{display : 'inline-block', width: '80%'}}color={R.merge(this.state.userColor, {index: this.props.index})} onChange={this.onChange}/>
         </div>);
     }
 }

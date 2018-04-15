@@ -35,8 +35,9 @@ export default class ColorChooser extends React.Component{
     }
 
     onChangeAlpha(event){
-        var alpha = event.target.value;
+        var alpha = parseInt(event.target.value);
         this.setState({'alpha' : alpha});
+        this.props.onChange(R.merge(this.state.color, {a: this.state.alpha, index: this.state.index}));
     }
 
     onUpdate(){
@@ -45,8 +46,8 @@ export default class ColorChooser extends React.Component{
 
     render (){
         return (<div style={this.props.style}>
-           <input type="color" value={this._toHex(this.state.color)} onChange={this.onChangeColor}/>
-            <input type="range" value={this.state.alpha} min="0" max="255" onChange={this.onChangeAlpha}/>
+            <input type="color" value={this._toHex(this.state.color)} onChange={this.onChangeColor}/>
+            <input type="range" value={this.state.alpha} min="0" max="255" onChange={this.onChangeAlpha} />
         </div>);
     }
 }
